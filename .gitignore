@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Environments
+.venv/
+venv/
+env/
+
+# Uploads and temp
+uploads/*
+!uploads/.gitignore
+
+# VS Code
+.vscode/
