@@ -79,11 +79,9 @@ requirements.txt
 /tests/
 ```
 
-## MILESTONE (7 sprints)
+## MILESTONE (5 sprints)
 - Sprint 1 – fait: Base Flask, JSON ⇄ YAML, README
 - Sprint 2 – images: PNG → JPG, JPG ↔ WebP, PNG → WebP (Pillow)
 - Sprint 3 – SVG: SVG → PNG (CairoSVG/Inkscape)
 - Sprint 4 – audio: MP4 → MP3, MP3 → WAV (FFmpeg/pydub)
 - Sprint 5 – documents: PDF ↔ DOCX (LibreOffice headless), sandbox tmp, tests simples
-- Sprint 6 – UX & CI/CD: drag&drop, multi-upload, file queue (option), rate limiting, Dockerfile, GitHub Actions
-- Sprint 7 – Observabilité & release: logs/metrics, quotas/retention, auth (option), docs déploiement (local), release v1.0
