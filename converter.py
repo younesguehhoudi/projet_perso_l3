@@ -1,52 +1,122 @@
 import json
 from typing import Any
+from io import BytesIO
 
 import yaml
+from PIL import Image
 
 
 class ConversionError(Exception):
-    """Raised when conversion between formats fails."""
+    """Levée lorsque la conversion entre formats échoue."""
 
 
-def _parse_input(text: str) -> tuple[str, Any]:
+def _analyser_entree(texte: str) -> tuple[str, Any]:
     """
-    Try to parse the input as JSON first (strict), then YAML.
-    Returns a tuple of (source_format, data).
-    source_format is either 'json' or 'yaml'.
+    Essaie d'analyser l'entrée comme JSON d'abord (strict), puis YAML.
+    Retourne un tuple de (format_source, donnees).
+    format_source est soit 'json' soit 'yaml'.
     """
-    # Try JSON first
+    # Essayer JSON d'abord
     try:
-        data = json.loads(text)
-        return "json", data
+        donnees = json.loads(texte)
+        return "json", donnees
     except Exception:
         pass
 
-    # Then YAML (JSON is a subset of YAML, so ordering matters)
+    # Puis YAML (JSON est un sous-ensemble de YAML, donc l'ordre compte)
     try:
-        data = yaml.safe_load(text)
-        return "yaml", data
+        donnees = yaml.safe_load(texte)
+        return "yaml", donnees
     except Exception as e:
         raise ConversionError("Impossible de parser le contenu en JSON ou YAML.") from e
 
 
-def convert_data(text: str, target_format: str) -> str:
+def convertir_donnees(texte: str, format_cible: str) -> str:
     """
-    Convert the given text (JSON or YAML) into the target format ('json' or 'yaml').
-    If input is already in the target format, it will be reformatted nicely.
+    Convertit le texte donné (JSON ou YAML) vers le format cible ('json' ou 'yaml').
+    Si l'entrée est déjà dans le format cible, elle sera reformatée proprement.
     """
-    target = target_format.lower().strip()
-    if target not in {"json", "yaml"}:
+    cible = format_cible.lower().strip()
+    if cible not in {"json", "yaml"}:
         raise ConversionError("Format de sortie non supporté. Utilisez 'json' ou 'yaml'.")
 
-    source, data = _parse_input(text)
+    source, donnees = _analyser_entree(texte)
 
     try:
-        if target == "json":
-            # Reformat JSON (or convert YAML->JSON)
-            return json.dumps(data, indent=2, ensure_ascii=False) + "\n"
-        else:  # target == "yaml"
-            # Pretty YAML without sorting keys to keep user order when possible
-            return yaml.safe_dump(data, sort_keys=False, allow_unicode=True)
+        if cible == "json":
+            # Reformater JSON (ou convertir YAML→JSON)
+            return json.dumps(donnees, indent=2, ensure_ascii=False) + "\n"
+        else:  # cible == "yaml"
+            # YAML formaté sans trier les clés pour préserver l'ordre utilisateur
+            return yaml.safe_dump(donnees, sort_keys=False, allow_unicode=True)
     except TypeError as e:
-        # Some YAML types may not be JSON serializable; provide a clearer error
+        # Certains types YAML peuvent ne pas être sérialisables en JSON
         raise ConversionError("Les données contiennent des types non sérialisables en JSON.") from e
+
+
+def convertir_image(octets_entree: bytes, format_source: str, format_cible: str) -> bytes:
+    """
+    Convertit une image du format_source vers le format_cible.
+    Conversions supportées :
+    - PNG → JPG
+    - JPG → WebP
+    - WebP → JPG
+    - PNG → WebP
+    
+    Args:
+        octets_entree: Octets bruts de l'image d'entrée
+        format_source: Format source (png, jpg, jpeg, webp)
+        format_cible: Format cible (png, jpg, jpeg, webp)
+    
+    Returns:
+        bytes: Image convertie en octets
+    
+    Raises:
+        ConversionError: Si la conversion échoue ou le format n'est pas supporté
+    """
+    source = format_source.lower().strip()
+    cible = format_cible.lower().strip()
+    
+    # Normaliser jpeg en jpg
+    if source == "jpeg":
+        source = "jpg"
+    if cible == "jpeg":
+        cible = "jpg"
+    
+    formats_supportes = {"png", "jpg", "webp"}
+    if source not in formats_supportes or cible not in formats_supportes:
+        raise ConversionError(f"Format non supporté. Formats acceptés: {', '.join(formats_supportes)}")
+    
+    try:
+        # Charger l'image depuis les octets
+        img = Image.open(BytesIO(octets_entree))
+        
+        # Convertir RGBA en RGB si la cible est JPG (JPG ne supporte pas la transparence)
+        if cible == "jpg" and img.mode in ("RGBA", "LA", "P"):
+            # Créer un fond blanc
+            img_rgb = Image.new("RGB", img.size, (255, 255, 255))
+            if img.mode == "P":
+                img = img.convert("RGBA")
+            img_rgb.paste(img, mask=img.split()[-1] if img.mode in ("RGBA", "LA") else None)
+            img = img_rgb
+        
+        # Sauvegarder en octets avec le format approprié
+        sortie = BytesIO()
+        kwargs_sauvegarde = {}
+        
+        if cible == "jpg":
+            kwargs_sauvegarde["quality"] = 85
+            kwargs_sauvegarde["optimize"] = True
+            img.save(sortie, format="JPEG", **kwargs_sauvegarde)
+        elif cible == "webp":
+            kwargs_sauvegarde["quality"] = 85
+            kwargs_sauvegarde["method"] = 6  # Meilleure compression
+            img.save(sortie, format="WEBP", **kwargs_sauvegarde)
+        elif cible == "png":
+            kwargs_sauvegarde["optimize"] = True
+            img.save(sortie, format="PNG", **kwargs_sauvegarde)
+        
+        return sortie.getvalue()
+        
+    except Exception as e:
+        raise ConversionError(f"Échec de la conversion d'image: {str(e)}") from e
