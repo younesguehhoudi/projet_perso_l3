@@ -2,8 +2,11 @@
 
 Convertisseur de fichiers basé sur Flask, usage local uniquement (pas de déploiement internet prévu).
 
-Statut actuel (Sprint 1): conversion de données JSON ⇄ YAML et reformatage JSON opérationnels.
-Des conversions d’images, d’audio et de documents sont prévues pour les prochains sprints.
+Statut actuel (Sprint 2 terminé): 
+- Conversion de données JSON ⇄ YAML et reformatage JSON opérationnels.
+- Conversions d'images PNG→JPG, JPG↔WebP, PNG→WebP opérationnelles.
+
+Des conversions SVG, audio et documents sont prévues pour les prochains sprints.
 
 ## Prérequis
 - Python 3.10+
@@ -39,23 +42,27 @@ Le serveur démarre sur http://localhost:5000
 
 ## Utilisation
 - Ouvrez la page d'accueil `/` (index).
+- Sélectionnez le type de conversion (Données ou Image).
 - Uploadez un fichier.
 - Choisissez le format de sortie.
 - Cliquez « Convertir et télécharger ».
 
 Notes:
-- (Sprint 1), l'interface prend en charge la conversion de données JSON ⇄ YAML et le reformatage JSON.
+- (Sprint 1 & 2) Support de JSON/YAML et PNG/JPG/WebP.
 - La taille maximale autorisée est de 10 Mo.
 - Les fichiers temporaires sont supprimés automatiquement après le téléchargement.
 
 ## Fonctionnalités
 
-Disponibles (Sprint 1)
-- JSON ⇄ YAML, reformatage JSON (bibliothèques `json` et `PyYAML`).
+Disponibles (Sprint 1 & 2)
+- **Données**: JSON ⇄ YAML, reformatage JSON (bibliothèques `json` et `PyYAML`).
+- **Images**: PNG → JPG, JPG → WebP, WebP → JPG, PNG → WebP (bibliothèque `Pillow`).
+  - Gestion automatique de la transparence (conversion RGBA → RGB avec fond blanc pour JPG).
+  - Optimisation et compression de qualité 85% par défaut.
 
 En préparation (prochains sprints)
+- SVG: SVG → PNG (via CairoSVG/Inkscape).
 - Documents: PDF ↔ DOCX (via LibreOffice en mode headless).
-- Images: PNG → JPG, JPG ↔ WebP, SVG → PNG (via Pillow/CairoSVG).
 - Audio: MP4 → MP3, MP3 → WAV (via FFmpeg/pydub).
 
 Remarques techniques:
@@ -79,9 +86,11 @@ requirements.txt
 /tests/
 ```
 
-## MILESTONE (5 sprints)
-- Sprint 1 – fait: Base Flask, JSON ⇄ YAML, README
-- Sprint 2 – images: PNG → JPG, JPG ↔ WebP, PNG → WebP (Pillow)
+## MILESTONE (7 sprints)
+- Sprint 1 – **fait**: Base Flask, JSON ⇄ YAML, README
+- Sprint 2 – **fait**: images PNG → JPG, JPG ↔ WebP, PNG → WebP (Pillow)
 - Sprint 3 – SVG: SVG → PNG (CairoSVG/Inkscape)
 - Sprint 4 – audio: MP4 → MP3, MP3 → WAV (FFmpeg/pydub)
 - Sprint 5 – documents: PDF ↔ DOCX (LibreOffice headless), sandbox tmp, tests simples
+- Sprint 6 – (...)
+- Sprint 7 – (...)
