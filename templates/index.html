@@ -29,20 +29,21 @@
             <!-- Sélecteur de type (indicatif). Les autres types seront activés dans les prochains sprints. -->
             <div class="mb-3">
               <label for="conversion_type" class="form-label">Type de conversion</label>
-              <select class="form-select" id="conversion_type" name="conversion_type">
+              <select class="form-select" id="conversion_type" name="conversion_type" onchange="updateFormatOptions()">
                 <option value="data" selected>Données (JSON/YAML)</option>
-                <option value="image" disabled>Image (bientôt)</option>
+                <option value="image">Image (PNG/JPG/WebP)</option>
                 <option value="audio" disabled>Audio (bientôt)</option>
                 <option value="document" disabled>Document (bientôt)</option>
               </select>
             </div>
             <div class="mb-3">
-              <label for="file" class="form-label">Fichier (JSON ou YAML)</label>
-              <input class="form-control" type="file" id="file" name="file" accept=".json,.yaml,.yml,.txt,.conf,.yml" required />
+              <label for="file" class="form-label">Fichier</label>
+              <input class="form-control" type="file" id="file" name="file" required />
             </div>
             <div class="mb-3">
               <label for="target_format" class="form-label">Format de sortie</label>
               <select class="form-select" id="target_format" name="target_format" required>
+                <!-- Options will be populated by JavaScript -->
                 <option value="json">JSON</option>
                 <option value="yaml">YAML</option>
               </select>
@@ -56,5 +57,26 @@
         <p class="text-muted m-0">Usage local uniquement (serveur lié à 127.0.0.1 par défaut).</p>
       </div>
     </div>
+    <script>
+      function updateFormatOptions() {
+        const conversionType = document.getElementById('conversion_type').value;
+        const targetFormatSelect = document.getElementById('target_format');
+        const fileInput = document.getElementById('file');
+        
+        // Clear existing options
+        targetFormatSelect.innerHTML = '';
+        
+        if (conversionType === 'data') {
+          targetFormatSelect.innerHTML = '<option value="json">JSON</option><option value="yaml">YAML</option>';
+          fileInput.setAttribute('accept', '.json,.yaml,.yml,.txt,.conf');
+        } else if (conversionType === 'image') {
+          targetFormatSelect.innerHTML = '<option value="png">PNG</option><option value="jpg">JPG</option><option value="webp">WebP</option>';
+          fileInput.setAttribute('accept', '.png,.jpg,.jpeg,.webp');
+        }
+      }
+      
+      // Initialize on page load
+      document.addEventListener('DOMContentLoaded', updateFormatOptions);
+    </script>
   </body>
   </html>

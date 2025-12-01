@@ -2,33 +2,33 @@ import json
 
 import pytest
 
-from converter import convert_data, ConversionError
+from converter import convertir_donnees, ConversionError
 
 
-def test_json_to_yaml():
+def test_json_vers_yaml():
     src = '{"name":"Alice","age":30}'
-    out = convert_data(src, "yaml")
-    assert "name:" in out and "Alice" in out
+    sortie = convertir_donnees(src, "yaml")
+    assert "name:" in sortie and "Alice" in sortie
 
 
-def test_yaml_to_json():
+def test_yaml_vers_json():
     src = """
     name: Bob
     age: 25
     """
-    out = convert_data(src, "json")
-    parsed = json.loads(out)
-    assert parsed == {"name": "Bob", "age": 25}
+    sortie = convertir_donnees(src, "json")
+    analyse = json.loads(sortie)
+    assert analyse == {"name": "Bob", "age": 25}
 
 
-def test_json_reformat():
+def test_reformatage_json():
     src = '{"a":1,"b":2}'
-    out = convert_data(src, "json")
-    # It should be valid JSON and pretty-printed (contains spaces/newlines)
-    assert json.loads(out) == {"a": 1, "b": 2}
-    assert "\n" in out
+    sortie = convertir_donnees(src, "json")
+    # Doit être du JSON valide et joliment formaté (contient espaces/sauts de ligne)
+    assert json.loads(sortie) == {"a": 1, "b": 2}
+    assert "\n" in sortie
 
 
-def test_invalid_input():
+def test_entree_invalide():
     with pytest.raises(ConversionError):
-        convert_data("not: [valid", "json")
+        convertir_donnees("not: [valid", "json")
