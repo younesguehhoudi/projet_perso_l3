@@ -120,3 +120,28 @@ def convertir_image(octets_entree: bytes, format_source: str, format_cible: str)
         
     except Exception as e:
         raise ConversionError(f"Échec de la conversion d'image: {str(e)}") from e
+
+
+def convertir_svg_vers_png(octets_entree: bytes) -> bytes:
+    """
+    Convertit une image SVG en PNG.
+
+    Args:
+        octets_entree: Octets bruts du fichier SVG
+
+    Returns:
+        bytes: Image PNG convertie
+
+    Raises:
+        ConversionError: Si la conversion échoue ou si CairoSVG est absent
+    """
+    try:
+        import cairosvg
+    except ImportError as e:
+        raise ConversionError("CairoSVG est requis pour convertir un SVG en PNG. Installez le paquet 'CairoSVG'.") from e
+
+    try:
+        # Laisser la transparence intacte, convertir aux dimensions natives du SVG
+        return cairosvg.svg2png(bytestring=octets_entree)
+    except Exception as e:
+        raise ConversionError(f"Échec de la conversion SVG → PNG: {str(e)}") from e

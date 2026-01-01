@@ -14,7 +14,7 @@ from flask import (
 )
 from werkzeug.utils import secure_filename
 
-from converter import convertir_donnees, convertir_image, ConversionError
+from converter import convertir_donnees, convertir_image, convertir_svg_vers_png, ConversionError
 
 
 REP_BASE = Path(__file__).resolve().parent
@@ -63,6 +63,47 @@ def convert():
             flash("Format de sortie invalide pour les images (choisissez PNG, JPG ou WebP).", "error")
             chemin_sauvegarde.unlink(missing_ok=True)
             return redirect(url_for("index"))
+        
+        # Conversion SVG → PNG (canal dédié)
+        if ext_source == "svg":
+            if format_cible != "png":
+                flash("Pour les SVG, seul le format PNG est supporté.", "error")
+                chemin_sauvegarde.unlink(missing_ok=True)
+                return redirect(url_for("index"))
+            try:
+                octets_sortie = convertir_svg_vers_png(chemin_sauvegarde.read_bytes())
+            except ConversionError as e:
+                flash(str(e), "error")
+                chemin_sauvegarde.unlink(missing_ok=True)
+                return redirect(url_for("index"))
+            except Exception:
+                flash("Une erreur inattendue est survenue pendant la conversion SVG.", "error")
+                chemin_sauvegarde.unlink(missing_ok=True)
+                return redirect(url_for("index"))
+
+            base_nom = Path(nom_original).stem or "converted"
+            nom_sortie = f"{base_nom}_{prefixe_unique}.png"
+            chemin_sortie = REP_UPLOADS / nom_sortie
+            chemin_sortie.write_bytes(octets_sortie)
+
+            @after_this_request
+            def nettoyage_temp(reponse):
+                try:
+                    chemin_sauvegarde.unlink(missing_ok=True)
+                except Exception:
+                    pass
+                try:
+                    chemin_sortie.unlink(missing_ok=True)
+                except Exception:
+                    pass
+                return reponse
+
+            return send_file(
+                chemin_sortie,
+                as_attachment=True,
+                download_name=nom_sortie,
+                mimetype="image/png",
+            )
         
         try:
             octets_entree = chemin_sauvegarde.read_bytes()

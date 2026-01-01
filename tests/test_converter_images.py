@@ -2,7 +2,7 @@ import io
 from PIL import Image
 import pytest
 
-from converter import convertir_image, ConversionError
+from converter import convertir_image, convertir_svg_vers_png, ConversionError
 
 
 def creer_image_test(format: str, mode: str = "RGB", taille: tuple = (100, 100)) -> bytes:
@@ -18,6 +18,16 @@ def creer_image_test(format: str, mode: str = "RGB", taille: tuple = (100, 100))
         img.save(sortie, format="WEBP", quality=85)
     
     return sortie.getvalue()
+
+
+def creer_svg_test(taille: tuple = (40, 40)) -> bytes:
+        largeur, hauteur = taille
+        # SVG minimal avec un rectangle plein
+        return f"""
+        <svg xmlns='http://www.w3.org/2000/svg' width='{largeur}' height='{hauteur}' viewBox='0 0 {largeur} {hauteur}'>
+            <rect width='{largeur}' height='{hauteur}' fill='blue'/>
+        </svg>
+        """.encode("utf-8")
 
 
 def test_png_vers_jpg():
@@ -83,6 +93,16 @@ def test_alias_jpeg():
     
     img = Image.open(io.BytesIO(octets_webp))
     assert img.format == "WEBP"
+
+
+def test_svg_vers_png():
+    """Test conversion SVG vers PNG via CairoSVG."""
+    octets_svg = creer_svg_test()
+    octets_png = convertir_svg_vers_png(octets_svg)
+
+    img = Image.open(io.BytesIO(octets_png))
+    assert img.format == "PNG"
+    assert img.size == (40, 40)
 
 
 def test_format_non_supporte():

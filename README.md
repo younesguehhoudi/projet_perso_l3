@@ -2,14 +2,15 @@
 
 Convertisseur de fichiers basé sur Flask, usage local uniquement (pas de déploiement internet prévu).
 
-Statut actuel (Sprint 2 terminé): 
+Statut actuel (Sprint 3 terminé): 
 - Conversion de données JSON ⇄ YAML et reformatage JSON opérationnels.
-- Conversions d'images PNG→JPG, JPG↔WebP, PNG→WebP opérationnelles.
+- Conversions d'images PNG→JPG, JPG↔WebP, PNG→WebP, SVG→PNG opérationnelles.
 
 Des conversions SVG, audio et documents sont prévues pour les prochains sprints.
 
 ## Prérequis
 - Python 3.10+
+- CairoSVG (pour les conversions SVG → PNG)
 
 ## Installation
 
@@ -48,7 +49,7 @@ Le serveur démarre sur http://localhost:5000
 - Cliquez « Convertir et télécharger ».
 
 Notes:
-- (Sprint 1 & 2) Support de JSON/YAML et PNG/JPG/WebP.
+- (Sprint 1 à 3) Support de JSON/YAML, PNG/JPG/WebP et SVG→PNG.
 - La taille maximale autorisée est de 10 Mo.
 - Les fichiers temporaires sont supprimés automatiquement après le téléchargement.
 
@@ -60,8 +61,10 @@ Disponibles (Sprint 1 & 2)
   - Gestion automatique de la transparence (conversion RGBA → RGB avec fond blanc pour JPG).
   - Optimisation et compression de qualité 85% par défaut.
 
+Nouveau (Sprint 3)
+- **SVG**: SVG → PNG (bibliothèque `CairoSVG`).
+
 En préparation (prochains sprints)
-- SVG: SVG → PNG (via CairoSVG/Inkscape).
 - Documents: PDF ↔ DOCX (via LibreOffice en mode headless).
 - Audio: MP4 → MP3, MP3 → WAV (via FFmpeg/pydub).
 
@@ -89,7 +92,7 @@ requirements.txt
 ## MILESTONE (7 sprints)
 - Sprint 1 – **fait**: Base Flask, JSON ⇄ YAML, README
 - Sprint 2 – **fait**: images PNG → JPG, JPG ↔ WebP, PNG → WebP (Pillow)
-- Sprint 3 – SVG: SVG → PNG (CairoSVG/Inkscape)
+- Sprint 3 – **fait**: SVG → PNG (CairoSVG)
 - Sprint 4 – audio: MP4 → MP3, MP3 → WAV (FFmpeg/pydub)
 - Sprint 5 – documents: PDF ↔ DOCX (LibreOffice headless), sandbox tmp, tests simples
 - Sprint 6 – (...)

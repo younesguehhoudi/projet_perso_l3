@@ -3,13 +3,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Convertisseur JSON/YAML</title>
+    <title>Convertisseur JSON/YAML + Images</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
   </head>
   <body>
     <div class="container py-5">
       <h1 class="mb-2">Convertisseur de fichiers (local)</h1>
-      <p class="text-muted mb-4">Actuellement disponible: conversion de données JSON ⇄ YAML et reformatage JSON. D'autres conversions (images, audio, documents) arrivent dans les prochains sprints.</p>
+      <p class="text-muted mb-4">Disponible: données JSON ⇄ YAML, images PNG/JPG/WebP et SVG → PNG. D'autres conversions (audio, documents) arrivent dans les prochains sprints.</p>
 
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -31,7 +31,7 @@
               <label for="conversion_type" class="form-label">Type de conversion</label>
               <select class="form-select" id="conversion_type" name="conversion_type" onchange="updateFormatOptions()">
                 <option value="data" selected>Données (JSON/YAML)</option>
-                <option value="image">Image (PNG/JPG/WebP)</option>
+                <option value="image">Image (PNG/JPG/WebP, SVG → PNG)</option>
                 <option value="audio" disabled>Audio (bientôt)</option>
                 <option value="document" disabled>Document (bientôt)</option>
               </select>
@@ -42,6 +42,7 @@
             </div>
             <div class="mb-3">
               <label for="target_format" class="form-label">Format de sortie</label>
+              <p class="form-text">Pour les SVG, seul le PNG est supporté.</p>
               <select class="form-select" id="target_format" name="target_format" required>
                 <!-- Options will be populated by JavaScript -->
                 <option value="json">JSON</option>
@@ -71,7 +72,7 @@
           fileInput.setAttribute('accept', '.json,.yaml,.yml,.txt,.conf');
         } else if (conversionType === 'image') {
           targetFormatSelect.innerHTML = '<option value="png">PNG</option><option value="jpg">JPG</option><option value="webp">WebP</option>';
-          fileInput.setAttribute('accept', '.png,.jpg,.jpeg,.webp');
+          fileInput.setAttribute('accept', '.png,.jpg,.jpeg,.webp,.svg');
         }
       }
       
