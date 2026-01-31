@@ -14,7 +14,13 @@ from flask import (
 )
 from werkzeug.utils import secure_filename
 
-from converter import convertir_donnees, convertir_image, convertir_svg_vers_png, ConversionError
+from converter import (
+    convertir_donnees,
+    convertir_image,
+    convertir_svg_vers_png,
+    convertir_audio,
+    ConversionError,
+)
 
 
 REP_BASE = Path(__file__).resolve().parent
@@ -56,6 +62,15 @@ def convert():
         ext_source = Path(nom_original).suffix.lower().lstrip(".")
         if not ext_source:
             flash("Impossible de détecter le format du fichier image.", "error")
+            chemin_sauvegarde.unlink(missing_ok=True)
+            return redirect(url_for("index"))
+        
+        # Normaliser les formats pour comparaison
+        source_normalise = "jpg" if ext_source in {"jpg", "jpeg"} else ext_source
+        cible_normalise = "jpg" if format_cible in {"jpg", "jpeg"} else format_cible
+        
+        if source_normalise == cible_normalise and ext_source != "svg":
+            flash(f"L'image est déjà au format {format_cible.upper()}. Choisissez un autre format de sortie.", "error")
             chemin_sauvegarde.unlink(missing_ok=True)
             return redirect(url_for("index"))
         
@@ -141,11 +156,86 @@ def convert():
         mimetype = carte_mimetype.get(format_cible, "application/octet-stream")
         return send_file(chemin_sortie, as_attachment=True, download_name=nom_sortie, mimetype=mimetype)
 
+    # Gérer la conversion audio (MP4 → MP3, MP3 → WAV)
+    if type_conversion == "audio":
+        ext_source = Path(nom_original).suffix.lower().lstrip(".")
+        if not ext_source:
+            flash("Impossible de détecter le format du fichier audio.", "error")
+            chemin_sauvegarde.unlink(missing_ok=True)
+            return redirect(url_for("index"))
+
+        if ext_source not in {"mp4", "mp3"}:
+            flash("Format audio source non supporté (MP4 ou MP3).", "error")
+            chemin_sauvegarde.unlink(missing_ok=True)
+            return redirect(url_for("index"))
+
+        if format_cible not in {"mp3", "wav"}:
+            flash("Format de sortie invalide pour l'audio (MP3 ou WAV).", "error")
+            chemin_sauvegarde.unlink(missing_ok=True)
+            return redirect(url_for("index"))
+
+        if ext_source == "mp4" and format_cible != "mp3":
+            flash("Pour les MP4, seul le format MP3 est supporté.", "error")
+            chemin_sauvegarde.unlink(missing_ok=True)
+            return redirect(url_for("index"))
+
+        if ext_source == "mp3" and format_cible != "wav":
+            flash("Pour les MP3, seul le format WAV est supporté.", "error")
+            chemin_sauvegarde.unlink(missing_ok=True)
+            return redirect(url_for("index"))
+        
+        if ext_source == format_cible:
+            flash(f"Le fichier est déjà au format {format_cible.upper()}. Choisissez un autre format de sortie.", "error")
+            chemin_sauvegarde.unlink(missing_ok=True)
+            return redirect(url_for("index"))
+
+        try:
+            octets_entree = chemin_sauvegarde.read_bytes()
+            octets_sortie = convertir_audio(octets_entree, ext_source, format_cible)
+        except ConversionError as e:
+            flash(str(e), "error")
+            chemin_sauvegarde.unlink(missing_ok=True)
+            return redirect(url_for("index"))
+        except Exception:
+            flash("Une erreur inattendue est survenue pendant la conversion audio.", "error")
+            chemin_sauvegarde.unlink(missing_ok=True)
+            return redirect(url_for("index"))
+
+        base_nom = Path(nom_original).stem or "converted"
+        nom_sortie = f"{base_nom}_{prefixe_unique}.{format_cible}"
+        chemin_sortie = REP_UPLOADS / nom_sortie
+        chemin_sortie.write_bytes(octets_sortie)
+
+        @after_this_request
+        def nettoyage_temp(reponse):
+            try:
+                chemin_sauvegarde.unlink(missing_ok=True)
+            except Exception:
+                pass
+            try:
+                chemin_sortie.unlink(missing_ok=True)
+            except Exception:
+                pass
+            return reponse
+
+        carte_mimetype_audio = {"mp3": "audio/mpeg", "wav": "audio/wav"}
+        mimetype = carte_mimetype_audio.get(format_cible, "application/octet-stream")
+        return send_file(chemin_sortie, as_attachment=True, download_name=nom_sortie, mimetype=mimetype)
+
     # Gérer la conversion de données (JSON/YAML) - code existant
     if format_cible not in {"json", "yaml"}:
         flash("Format de sortie invalide (choisissez JSON ou YAML).", "error")
         chemin_sauvegarde.unlink(missing_ok=True)
         return redirect(url_for("index"))
+    
+    # Détecter le format source
+    ext_source_data = Path(nom_original).suffix.lower().lstrip(".")
+    if ext_source_data in {"json", "yaml", "yml"}:
+        source_normalise = "json" if ext_source_data == "json" else "yaml"
+        if source_normalise == format_cible:
+            flash(f"Le fichier est déjà au format {format_cible.upper()}. Choisissez un autre format de sortie.", "error")
+            chemin_sauvegarde.unlink(missing_ok=True)
+            return redirect(url_for("index"))
 
     try:
         texte = chemin_sauvegarde.read_text(encoding="utf-8")

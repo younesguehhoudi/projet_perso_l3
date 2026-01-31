@@ -2,11 +2,12 @@
 
 Convertisseur de fichiers basé sur Flask, usage local uniquement (pas de déploiement internet prévu).
 
-Statut actuel (Sprint 3 terminé): 
+Statut actuel (Sprint 4 terminé): 
 - Conversion de données JSON ⇄ YAML et reformatage JSON opérationnels.
 - Conversions d'images PNG→JPG, JPG↔WebP, PNG→WebP, SVG→PNG opérationnelles.
+- Conversions audio MP4→MP3 et MP3→WAV opérationnelles.
 
-Des conversions SVG, audio et documents sont prévues pour les prochains sprints.
+Des conversions de documents sont prévues pour les prochains sprints.
 
 ## Prérequis
 - Python 3.10+
@@ -49,7 +50,7 @@ Le serveur démarre sur http://localhost:5000
 - Cliquez « Convertir et télécharger ».
 
 Notes:
-- (Sprint 1 à 3) Support de JSON/YAML, PNG/JPG/WebP et SVG→PNG.
+- (Sprint 1 à 4) Support de JSON/YAML, PNG/JPG/WebP, SVG→PNG, MP4→MP3 et MP3→WAV.
 - La taille maximale autorisée est de 10 Mo.
 - Les fichiers temporaires sont supprimés automatiquement après le téléchargement.
 
@@ -64,12 +65,14 @@ Disponibles (Sprint 1 & 2)
 Nouveau (Sprint 3)
 - **SVG**: SVG → PNG (bibliothèque `CairoSVG`).
 
+Nouveau (Sprint 4)
+- **Audio**: MP4 → MP3, MP3 → WAV (via `ffmpeg`).
+
 En préparation (prochains sprints)
 - Documents: PDF ↔ DOCX (via LibreOffice en mode headless).
-- Audio: MP4 → MP3, MP3 → WAV (via FFmpeg/pydub).
 
 Remarques techniques:
-- Les conversions d’images, d’audio et de documents peuvent nécessiter des dépendances système (ex: `ffmpeg`, `libreoffice`, `inkscape`). Des wrappers et des checks d’environnement seront ajoutés.
+- Les conversions d’images, d’audio et de documents peuvent nécessiter des dépendances système (ex: `ffmpeg`, `libreoffice`, `inkscape`). Des wrappers et des checks d’environnement sont ajoutés progressivement.
 
 ## Tests
 
@@ -93,7 +96,7 @@ requirements.txt
 - Sprint 1 – **fait**: Base Flask, JSON ⇄ YAML, README
 - Sprint 2 – **fait**: images PNG → JPG, JPG ↔ WebP, PNG → WebP (Pillow)
 - Sprint 3 – **fait**: SVG → PNG (CairoSVG)
-- Sprint 4 – audio: MP4 → MP3, MP3 → WAV (FFmpeg/pydub)
+- Sprint 4 – **fait**: audio MP4 → MP3, MP3 → WAV (FFmpeg)
 - Sprint 5 – documents: PDF ↔ DOCX (LibreOffice headless), sandbox tmp, tests simples
 - Sprint 6 – (...)
 - Sprint 7 – (...)

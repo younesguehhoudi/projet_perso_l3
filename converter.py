@@ -1,4 +1,7 @@
 import json
+import shutil
+import subprocess
+import tempfile
 from typing import Any
 from io import BytesIO
 
@@ -145,3 +148,71 @@ def convertir_svg_vers_png(octets_entree: bytes) -> bytes:
         return cairosvg.svg2png(bytestring=octets_entree)
     except Exception as e:
         raise ConversionError(f"Échec de la conversion SVG → PNG: {str(e)}") from e
+
+
+def _verifier_ffmpeg() -> str:
+    ffmpeg = shutil.which("ffmpeg") or shutil.which("avconv")
+    if not ffmpeg:
+        raise ConversionError("FFmpeg est requis pour les conversions audio. Installez 'ffmpeg' sur votre système.")
+    return ffmpeg
+
+
+def convertir_audio(octets_entree: bytes, format_source: str, format_cible: str) -> bytes:
+    """
+    Convertit un fichier audio entre formats supportés.
+    Conversions supportées :
+    - MP4 → MP3
+    - MP3 → WAV
+
+    Args:
+        octets_entree: Octets bruts de l'audio d'entrée
+        format_source: Format source (mp4, mp3)
+        format_cible: Format cible (mp3, wav)
+
+    Returns:
+        bytes: Audio converti en octets
+
+    Raises:
+        ConversionError: Si la conversion échoue ou le format n'est pas supporté
+    """
+    source = format_source.lower().strip()
+    cible = format_cible.lower().strip()
+
+    formats_source = {"mp4", "mp3"}
+    formats_cible = {"mp3", "wav"}
+    if source not in formats_source or cible not in formats_cible:
+        raise ConversionError("Format audio non supporté. Utilisez MP4/MP3 vers MP3/WAV.")
+
+    if source == "mp4" and cible != "mp3":
+        raise ConversionError("La conversion MP4 supportée est uniquement MP4 → MP3.")
+    if source == "mp3" and cible != "wav":
+        raise ConversionError("La conversion MP3 supportée est uniquement MP3 → WAV.")
+
+    ffmpeg = _verifier_ffmpeg()
+
+    try:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            entree_path = tempfile.NamedTemporaryFile(delete=False, dir=tmpdir, suffix=f".{source}")
+            sortie_path = tempfile.NamedTemporaryFile(delete=False, dir=tmpdir, suffix=f".{cible}")
+            entree_path.write(octets_entree)
+            entree_path.close()
+            sortie_path.close()
+
+            cmd = [
+                ffmpeg,
+                "-y",
+                "-hide_banner",
+                "-loglevel",
+                "error",
+                "-i",
+                entree_path.name,
+                sortie_path.name,
+            ]
+            subprocess.run(cmd, check=True)
+
+            with open(sortie_path.name, "rb") as f:
+                return f.read()
+    except subprocess.CalledProcessError as e:
+        raise ConversionError("Échec de la conversion audio via FFmpeg.") from e
+    except Exception as e:
+        raise ConversionError(f"Échec de la conversion audio: {str(e)}") from e
