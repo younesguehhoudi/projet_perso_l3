@@ -50,29 +50,18 @@ Le serveur démarre sur http://localhost:5000
 - Cliquez « Convertir et télécharger ».
 
 Notes:
-- (Sprint 1 à 4) Support de JSON/YAML, PNG/JPG/WebP, SVG→PNG, MP4→MP3 et MP3→WAV.
-- La taille maximale autorisée est de 10 Mo.
-- Les fichiers temporaires sont supprimés automatiquement après le téléchargement.
+- La taille maximale d'un fichier autorisée est de 10 Mo.
 
 ## Fonctionnalités
-
-Disponibles (Sprint 1 & 2)
 - **Données**: JSON ⇄ YAML, reformatage JSON (bibliothèques `json` et `PyYAML`).
 - **Images**: PNG → JPG, JPG → WebP, WebP → JPG, PNG → WebP (bibliothèque `Pillow`).
   - Gestion automatique de la transparence (conversion RGBA → RGB avec fond blanc pour JPG).
   - Optimisation et compression de qualité 85% par défaut.
-
-Nouveau (Sprint 3)
 - **SVG**: SVG → PNG (bibliothèque `CairoSVG`).
-
-Nouveau (Sprint 4)
 - **Audio**: MP4 → MP3, MP3 → WAV (via `ffmpeg`).
 
-En préparation (prochains sprints)
-- Documents: PDF ↔ DOCX (via LibreOffice en mode headless).
-
 Remarques techniques:
-- Les conversions d’images, d’audio et de documents peuvent nécessiter des dépendances système (ex: `ffmpeg`, `libreoffice`, `inkscape`). Des wrappers et des checks d’environnement sont ajoutés progressivement.
+- Les conversions d’images, d’audio et de documents peuvent nécessiter des dépendances système (ex: `ffmpeg`, `libreoffice`, `inkscape`).
 
 ## Tests
 
