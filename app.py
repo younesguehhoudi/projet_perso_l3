@@ -19,6 +19,7 @@ from converter import (
     convertir_image,
     convertir_svg_vers_png,
     convertir_audio,
+    convertir_document,
     ConversionError,
 )
 
@@ -43,6 +44,7 @@ def convert():
     fichier = request.files.get("file")
     format_cible = request.form.get("target_format", "").lower()
     type_conversion = request.form.get("conversion_type", "data").lower()
+    txt_encoding = request.form.get("txt_encoding", "utf-8").lower().strip()
 
     if not fichier or fichier.filename == "":
         flash("Aucun fichier sélectionné.", "error")
@@ -220,6 +222,79 @@ def convert():
 
         carte_mimetype_audio = {"mp3": "audio/mpeg", "wav": "audio/wav"}
         mimetype = carte_mimetype_audio.get(format_cible, "application/octet-stream")
+        return send_file(chemin_sortie, as_attachment=True, download_name=nom_sortie, mimetype=mimetype)
+
+    # Gérer la conversion de documents (PDF/DOCX/TXT)
+    if type_conversion == "document":
+        ext_source = Path(nom_original).suffix.lower().lstrip(".")
+        if not ext_source:
+            flash("Impossible de détecter le format du document.", "error")
+            chemin_sauvegarde.unlink(missing_ok=True)
+            return redirect(url_for("index"))
+
+        formats_docs = {"pdf", "docx", "txt"}
+        if ext_source not in formats_docs:
+            flash("Format document source non supporté (PDF, DOCX ou TXT).", "error")
+            chemin_sauvegarde.unlink(missing_ok=True)
+            return redirect(url_for("index"))
+
+        if format_cible not in formats_docs:
+            flash("Format de sortie invalide pour les documents (PDF, DOCX ou TXT).", "error")
+            chemin_sauvegarde.unlink(missing_ok=True)
+            return redirect(url_for("index"))
+
+        if ext_source == format_cible:
+            flash(f"Le fichier est déjà au format {format_cible.upper()}. Choisissez un autre format de sortie.", "error")
+            chemin_sauvegarde.unlink(missing_ok=True)
+            return redirect(url_for("index"))
+
+        mime_attendus = {
+            "pdf": {"application/pdf"},
+            "docx": {"application/vnd.openxmlformats-officedocument.wordprocessingml.document"},
+            "txt": {"text/plain"},
+        }
+        mimetype_entree = (fichier.mimetype or "").lower().split(";")[0].strip()
+        if mimetype_entree and mimetype_entree != "application/octet-stream":
+            if mimetype_entree not in mime_attendus.get(ext_source, set()):
+                flash("Le type MIME du document ne correspond pas à l'extension.", "error")
+                chemin_sauvegarde.unlink(missing_ok=True)
+                return redirect(url_for("index"))
+
+        try:
+            octets_entree = chemin_sauvegarde.read_bytes()
+            octets_sortie = convertir_document(octets_entree, ext_source, format_cible, txt_encoding=txt_encoding)
+        except ConversionError as e:
+            flash(str(e), "error")
+            chemin_sauvegarde.unlink(missing_ok=True)
+            return redirect(url_for("index"))
+        except Exception:
+            flash("Une erreur inattendue est survenue pendant la conversion document.", "error")
+            chemin_sauvegarde.unlink(missing_ok=True)
+            return redirect(url_for("index"))
+
+        base_nom = Path(nom_original).stem or "converted"
+        nom_sortie = f"{base_nom}_{prefixe_unique}.{format_cible}"
+        chemin_sortie = REP_UPLOADS / nom_sortie
+        chemin_sortie.write_bytes(octets_sortie)
+
+        @after_this_request
+        def nettoyage_temp(reponse):
+            try:
+                chemin_sauvegarde.unlink(missing_ok=True)
+            except Exception:
+                pass
+            try:
+                chemin_sortie.unlink(missing_ok=True)
+            except Exception:
+                pass
+            return reponse
+
+        carte_mimetype_docs = {
+            "pdf": "application/pdf",
+            "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "txt": "text/plain",
+        }
+        mimetype = carte_mimetype_docs.get(format_cible, "application/octet-stream")
         return send_file(chemin_sortie, as_attachment=True, download_name=nom_sortie, mimetype=mimetype)
 
     # Gérer la conversion de données (JSON/YAML) - code existant

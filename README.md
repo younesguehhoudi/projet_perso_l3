@@ -2,16 +2,18 @@
 
 Convertisseur de fichiers basé sur Flask, usage local uniquement (pas de déploiement internet prévu).
 
-Statut actuel (Sprint 4 terminé): 
+Statut actuel (Sprint 5 en cours): 
 - Conversion de données JSON ⇄ YAML et reformatage JSON opérationnels.
 - Conversions d'images PNG→JPG, JPG↔WebP, PNG→WebP, SVG→PNG opérationnelles.
 - Conversions audio MP4→MP3 et MP3→WAV opérationnelles.
+- Conversions documents PDF ⇄ DOCX, PDF ⇄ TXT, DOCX ⇄ TXT opérationnelles (LibreOffice headless).
 
 Des conversions de documents sont prévues pour les prochains sprints.
 
 ## Prérequis
 - Python 3.10+
 - CairoSVG (pour les conversions SVG → PNG)
+- LibreOffice (pour les conversions documents PDF/DOCX/TXT)
 
 ## Installation
 
@@ -59,6 +61,7 @@ Notes:
   - Optimisation et compression de qualité 85% par défaut.
 - **SVG**: SVG → PNG (bibliothèque `CairoSVG`).
 - **Audio**: MP4 → MP3, MP3 → WAV (via `ffmpeg`).
+- **Documents**: PDF ⇄ DOCX, PDF ⇄ TXT, DOCX ⇄ TXT (via LibreOffice headless).
 
 Remarques techniques:
 - Les conversions d’images, d’audio et de documents peuvent nécessiter des dépendances système (ex: `ffmpeg`, `libreoffice`, `inkscape`).
@@ -86,6 +89,28 @@ requirements.txt
 - Sprint 2 – **fait**: images PNG → JPG, JPG ↔ WebP, PNG → WebP (Pillow)
 - Sprint 3 – **fait**: SVG → PNG (CairoSVG)
 - Sprint 4 – **fait**: audio MP4 → MP3, MP3 → WAV (FFmpeg)
-- Sprint 5 – documents: PDF ↔ DOCX (LibreOffice headless), sandbox tmp, tests simples
-- Sprint 6 – (...)
-- Sprint 7 – (...)
+- Sprint 5 – **documents et batch**:
+  - Conversions documents PDF ⇄ DOCX, PDF ⇄ TXT, DOCX ⇄ TXT (LibreOffice headless)
+  - Gestion de lots (multi-upload) et ZIP de sortie
+  - File d’attente simple en memoire (en attente / en cours / termine / erreur)
+  - Tests unitaires conversions documents
+  - Validation basique des formats en entree (extension + MIME)
+  - Parametres de conversion limits a 1 ou 2 options (ex: encodage TXT)
+  - Nettoyage automatique des fichiers temporaires par job termine
+  - refonte complete de l'interface (ajout du js/css)
+  - ajout de la navigation entre les differentes sections (données, images, documents)
+- Sprint 6 – **API locale et historique**:
+  - API REST locale (upload, convert, status, download)
+  - Cle API simple en header (optionnelle, valeur dans env)
+  - Historique des conversions en JSON local (date, formats, taille, statut)
+  - Endpoint de liste simple (dernieres conversions)
+  - Telechargement differe via ID de job
+  - Limites basiques (taille max globale, formats autorises)
+  - Documentation API locale minimale (exemples curl)
+- Sprint 7 – **UI avancee et profils**:
+  - Profils de conversion simples (JSON local, un profil par type)
+  - Tableau de suivi simple (liste + statut, sans temps reel)
+  - Previsualisation basique (images uniquement)
+  - Ameliorations UX (erreurs claires, resumes, aide contextuelle)
+  - Presets rapides (boutons pour conversions frequentes)
+  - Historique consultable depuis l’UI 

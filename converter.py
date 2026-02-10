@@ -4,6 +4,7 @@ import subprocess
 import tempfile
 from typing import Any
 from io import BytesIO
+from pathlib import Path
 
 import yaml
 from PIL import Image
@@ -148,6 +149,93 @@ def convertir_svg_vers_png(octets_entree: bytes) -> bytes:
         return cairosvg.svg2png(bytestring=octets_entree)
     except Exception as e:
         raise ConversionError(f"Échec de la conversion SVG → PNG: {str(e)}") from e
+
+
+def _verifier_libreoffice() -> str:
+    libreoffice = shutil.which("soffice") or shutil.which("libreoffice")
+    if not libreoffice:
+        raise ConversionError(
+            "LibreOffice est requis pour les conversions de documents. Installez 'libreoffice' sur votre système."
+        )
+    return libreoffice
+
+
+def convertir_document(
+    octets_entree: bytes,
+    format_source: str,
+    format_cible: str,
+    txt_encoding: str = "utf-8",
+) -> bytes:
+    """
+    Convertit des documents entre PDF/DOCX/TXT via LibreOffice headless.
+
+    Conversions supportées :
+    - PDF ⇄ DOCX
+    - PDF ⇄ TXT
+    - DOCX ⇄ TXT
+    - DOCX ⇄ PDF
+    - TXT ⇄ PDF
+
+    Args:
+        octets_entree: Octets bruts du document d'entrée
+        format_source: Format source (pdf, docx, txt)
+        format_cible: Format cible (pdf, docx, txt)
+        txt_encoding: Encodage pour les fichiers TXT (defaut: utf-8)
+
+    Returns:
+        bytes: Document converti en octets
+
+    Raises:
+        ConversionError: Si la conversion echoue ou le format n'est pas supporte
+    """
+    source = format_source.lower().strip()
+    cible = format_cible.lower().strip()
+
+    formats_supportes = {"pdf", "docx", "txt"}
+    if source not in formats_supportes or cible not in formats_supportes:
+        raise ConversionError("Format document non supporte. Utilisez PDF, DOCX ou TXT.")
+
+    if source == cible:
+        raise ConversionError("Le format source et le format cible sont identiques.")
+
+    if txt_encoding.lower().strip() not in {"utf-8", "latin-1"}:
+        raise ConversionError("Encodage TXT non supporte. Utilisez utf-8 ou latin-1.")
+
+    libreoffice = _verifier_libreoffice()
+
+    try:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_dir = Path(tmpdir)
+            chemin_entree = tmp_dir / f"input.{source}"
+
+            if source == "txt":
+                texte = octets_entree.decode(txt_encoding)
+                chemin_entree.write_text(texte, encoding=txt_encoding)
+            else:
+                chemin_entree.write_bytes(octets_entree)
+
+            cmd = [
+                libreoffice,
+                "--headless",
+                "--convert-to",
+                cible,
+                "--outdir",
+                str(tmp_dir),
+                str(chemin_entree),
+            ]
+            subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+            chemin_sortie = tmp_dir / f"input.{cible}"
+            if not chemin_sortie.exists():
+                raise ConversionError("LibreOffice n'a pas produit de fichier de sortie.")
+
+            return chemin_sortie.read_bytes()
+    except subprocess.CalledProcessError as e:
+        raise ConversionError("Echec de la conversion document via LibreOffice.") from e
+    except UnicodeDecodeError as e:
+        raise ConversionError("Encodage TXT invalide pour le fichier source.") from e
+    except Exception as e:
+        raise ConversionError(f"Echec de la conversion document: {str(e)}") from e
 
 
 def _verifier_ffmpeg() -> str:
