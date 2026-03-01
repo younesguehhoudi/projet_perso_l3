@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Convertisseur - Audio{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm">
+  <div class="card-body">
+    <p class="text-muted mb-3">Conversion audio MP4 → MP3 et MP3 → WAV.</p>
+    <form action="{{ url_for('convert') }}" method="post" enctype="multipart/form-data">
+      <input type="hidden" name="conversion_type" value="audio" />
+      <div class="mb-3">
+        <label for="file" class="form-label">Fichier(s)</label>
+        <input class="form-control" type="file" id="file" name="file" multiple required accept=".mp4,.mp3" />
+        <div class="form-text">En lot, un ZIP est généré automatiquement.</div>
+      </div>
+      <div class="mb-3">
+        <label for="target_format" class="form-label">Format de sortie</label>
+        <select class="form-select" id="target_format" name="target_format" required>
+          <option value="mp3">MP3</option>
+          <option value="wav">WAV</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" type="submit">Convertir et télécharger</button>
+    </form>
+  </div>
+</div>
+
+{% include '_jobs_table.html' %}
+{% endblock %}

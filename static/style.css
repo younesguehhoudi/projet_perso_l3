@@ -1,0 +1,31 @@
+body {
+  background: #f8f9fb;
+}
+
+.app-shell {
+  max-width: 980px;
+}
+
+.card {
+  border: 0;
+  border-radius: 1rem;
+}
+
+.main-nav .nav-link {
+  border-radius: 999px;
+  padding: .45rem .9rem;
+}
+
+.main-nav .nav-link.active {
+  background: #0d6efd;
+  color: #fff;
+}
+
+.status-pill {
+  font-size: .8rem;
+}
+
+.jobs-table td,
+.jobs-table th {
+  vertical-align: middle;
+}

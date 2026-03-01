@@ -101,16 +101,16 @@ requirements.txt
   - ajout de la navigation entre les differentes sections (données, images, documents)
 - Sprint 6 – **API locale et historique**:
   - API REST locale (upload, convert, status, download)
-  - Cle API simple en header (optionnelle, valeur dans env)
+  - Cle API en header (optionnelle, valeur dans env)
   - Historique des conversions en JSON local (date, formats, taille, statut)
-  - Endpoint de liste simple (dernieres conversions)
+  - Endpoint de liste (dernieres conversions)
   - Telechargement differe via ID de job
   - Limites basiques (taille max globale, formats autorises)
   - Documentation API locale minimale (exemples curl)
 - Sprint 7 – **UI avancee et profils**:
-  - Profils de conversion simples (JSON local, un profil par type)
-  - Tableau de suivi simple (liste + statut, sans temps reel)
-  - Previsualisation basique (images uniquement)
+  - Profils de conversion (JSON local, un profil par type)
+  - Tableau de suivi (liste + statut, sans temps reel)
+  - Previsualisation des fichiers (images, extraits de texte)
   - Ameliorations UX (erreurs claires, resumes, aide contextuelle)
   - Presets rapides (boutons pour conversions frequentes)
   - Historique consultable depuis l’UI 

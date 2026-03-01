@@ -1,0 +1,25 @@
+<div class="card shadow-sm mt-4">
+  <div class="card-body">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h2 class="h5 mb-0">File d’attente (mémoire)</h2>
+      <button class="btn btn-sm btn-outline-secondary" id="refresh_jobs" type="button">Actualiser</button>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm jobs-table mb-0">
+        <thead>
+          <tr>
+            <th>Job</th>
+            <th>Type</th>
+            <th>Sortie</th>
+            <th>Statut</th>
+            <th>Succès</th>
+            <th>Erreurs</th>
+          </tr>
+        </thead>
+        <tbody id="jobs_body">
+          <tr><td colspan="6" class="text-muted">Aucun job pour le moment.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
