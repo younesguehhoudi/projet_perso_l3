@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}Convertisseur local{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+  <body>
+    <div class="container py-4 app-shell">
+      <h1 class="mb-3">Convertisseur de fichiers (local)</h1>
+
+      <nav class="navbar navbar-expand-lg bg-white rounded-4 shadow-sm mb-4 px-3 py-2 main-nav">
+        <div class="navbar-nav gap-1">
+          <a class="nav-link {% if active_page == 'data' %}active{% endif %}" href="{{ url_for('page_data') }}">Données</a>
+          <a class="nav-link {% if active_page == 'images' %}active{% endif %}" href="{{ url_for('page_images') }}">Images</a>
+          <a class="nav-link {% if active_page == 'audio' %}active{% endif %}" href="{{ url_for('page_audio') }}">Audio</a>
+          <a class="nav-link {% if active_page == 'documents' %}active{% endif %}" href="{{ url_for('page_documents') }}">Documents</a>
+        </div>
+      </nav>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="mb-3">
+            {% for category, message in messages %}
+              <div class="alert alert-{{ 'danger' if category == 'error' else category }}" role="alert">
+                {{ message }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+
+      <div class="d-flex flex-column flex-md-row gap-3 mt-3">
+        <p class="text-muted m-0">Taille max: 10 Mo.</p>
+      </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+  </body>
+</html>
