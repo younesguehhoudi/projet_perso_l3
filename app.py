@@ -1,6 +1,7 @@
 import os
 import uuid
 import zipfile
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 from threading import Lock
@@ -31,6 +32,9 @@ from converter import (
 REP_BASE = Path(__file__).resolve().parent
 REP_UPLOADS = REP_BASE / "uploads"
 REP_UPLOADS.mkdir(parents=True, exist_ok=True)
+REP_API_EXPORTS = REP_UPLOADS / "api_exports"
+REP_API_EXPORTS.mkdir(parents=True, exist_ok=True)
+HISTORIQUE_PATH = REP_BASE / "history.json"
 
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = str(REP_UPLOADS)
@@ -42,6 +46,12 @@ JOBS: dict[str, dict] = {}
 JOB_ORDER: list[str] = []
 JOBS_LOCK = Lock()
 MAX_JOBS_MEMOIRE = 200
+HISTORY_LOCK = Lock()
+MAX_HISTORY_ENTRIES = 1000
+MAX_API_HISTORY_RETURNS = 100
+
+CLE_API = os.environ.get("LOCAL_API_KEY", "").strip()
+TAILLE_MAX_GLOBALE = int(os.environ.get("MAX_GLOBAL_UPLOAD_MB", "20")) * 1024 * 1024
 
 MIME_ATTENDUS_PAR_TYPE = {
     "data": {
@@ -79,9 +89,31 @@ MIME_ATTENDUS_PAR_TYPE = {
     },
 }
 
+FORMATS_CIBLES_AUTORISES = {
+    "data": {"json", "yaml"},
+    "image": {"png", "jpg", "jpeg", "webp"},
+    "audio": {"mp3", "wav"},
+    "document": {"pdf", "docx", "txt"},
+}
+
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _supprimer_fichier(path_str: str) -> None:
+    if not path_str:
+        return
+    try:
+        Path(path_str).unlink(missing_ok=True)
+    except Exception:
+        pass
+
+
+def _supprimer_sortie_job(job: dict) -> None:
+    if not job:
+        return
+    _supprimer_fichier(job.get("api_output_path", ""))
 
 
 def _creer_job(type_conversion: str, format_cible: str, nb_fichiers: int) -> str:
@@ -103,7 +135,8 @@ def _creer_job(type_conversion: str, format_cible: str, nb_fichiers: int) -> str
         JOB_ORDER.append(job_id)
         while len(JOB_ORDER) > MAX_JOBS_MEMOIRE:
             ancien = JOB_ORDER.pop(0)
-            JOBS.pop(ancien, None)
+            ancien_job = JOBS.pop(ancien, None)
+            _supprimer_sortie_job(ancien_job or {})
     return job_id
 
 
@@ -114,6 +147,67 @@ def _maj_job(job_id: str, **kwargs) -> None:
             return
         job.update(kwargs)
         job["updated_at"] = _now_iso()
+
+
+def _charger_historique() -> list[dict]:
+    if not HISTORIQUE_PATH.exists():
+        return []
+    try:
+        data = json.loads(HISTORIQUE_PATH.read_text(encoding="utf-8"))
+        return data if isinstance(data, list) else []
+    except Exception:
+        return []
+
+
+def _sauver_historique(entries: list[dict]) -> None:
+    HISTORIQUE_PATH.write_text(json.dumps(entries, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def _ajouter_historique(entree: dict) -> dict:
+    with HISTORY_LOCK:
+        historique = _charger_historique()
+        historique.append(entree)
+        if len(historique) > MAX_HISTORY_ENTRIES:
+            historique = historique[-MAX_HISTORY_ENTRIES:]
+        _sauver_historique(historique)
+    return entree
+
+
+def _dernier_historique(limit: int) -> list[dict]:
+    limite = max(1, min(limit, MAX_API_HISTORY_RETURNS))
+    with HISTORY_LOCK:
+        historique = _charger_historique()
+    return list(reversed(historique[-limite:]))
+
+
+def _taille_totale_uploads(fichiers: list) -> int:
+    total = 0
+    for fichier in fichiers:
+        stream = getattr(fichier, "stream", None)
+        if stream is None:
+            continue
+        position = stream.tell()
+        stream.seek(0, os.SEEK_END)
+        total += stream.tell()
+        stream.seek(position)
+    return total
+
+
+def _valider_requete_conversion(type_conversion: str, format_cible: str) -> None:
+    if type_conversion not in FORMATS_CIBLES_AUTORISES:
+        raise ConversionError("Type de conversion invalide.")
+
+    if format_cible not in FORMATS_CIBLES_AUTORISES[type_conversion]:
+        raise ConversionError("Format cible invalide pour ce type de conversion.")
+
+
+def _verifier_cle_api() -> tuple[bool, dict]:
+    if not CLE_API:
+        return True, {}
+    cle_recue = request.headers.get("X-API-Key", "")
+    if cle_recue != CLE_API:
+        return False, {"error": "API key invalide ou absente."}
+    return True, {}
 
 
 def _normaliser_image(fmt: str) -> str:
@@ -222,6 +316,34 @@ def _convertir_un_fichier(
     return texte_sortie.encode("utf-8"), ("json" if format_cible == "json" else "yaml"), mimetype
 
 
+def _enregistrer_historique_job(
+    *,
+    job_id: str,
+    type_conversion: str,
+    format_cible: str,
+    formats_sources: set[str],
+    taille_totale: int,
+    nb_fichiers: int,
+    success_count: int,
+    error_count: int,
+    status: str,
+) -> None:
+    entree = {
+        "id": uuid.uuid4().hex,
+        "job_id": job_id,
+        "date": _now_iso(),
+        "type": type_conversion,
+        "source_formats": sorted(formats_sources),
+        "target_format": format_cible,
+        "size_bytes": taille_totale,
+        "files_count": nb_fichiers,
+        "success_count": success_count,
+        "error_count": error_count,
+        "status": status,
+    }
+    _ajouter_historique(entree)
+
+
 @app.route("/")
 def index():
     return redirect(url_for("page_data"))
@@ -254,6 +376,229 @@ def jobs():
     return jsonify(data)
 
 
+@app.route("/api/jobs", methods=["GET"])
+def api_jobs():
+    ok, payload = _verifier_cle_api()
+    if not ok:
+        return jsonify(payload), 401
+
+    with JOBS_LOCK:
+        data = [JOBS[job_id] for job_id in reversed(JOB_ORDER[-30:]) if job_id in JOBS]
+    return jsonify(data)
+
+
+@app.route("/api/history", methods=["GET"])
+def api_history():
+    ok, payload = _verifier_cle_api()
+    if not ok:
+        return jsonify(payload), 401
+
+    try:
+        limit = int(request.args.get("limit", "20"))
+    except ValueError:
+        return jsonify({"error": "Le parametre limit doit être un entier."}), 400
+
+    return jsonify(_dernier_historique(limit))
+
+
+@app.route("/api/jobs/<job_id>", methods=["GET"])
+def api_job_status(job_id: str):
+    ok, payload = _verifier_cle_api()
+    if not ok:
+        return jsonify(payload), 401
+
+    with JOBS_LOCK:
+        job = JOBS.get(job_id)
+
+    if not job:
+        return jsonify({"error": "Job introuvable."}), 404
+
+    return jsonify(job)
+
+
+@app.route("/api/jobs/<job_id>/download", methods=["GET"])
+def api_download_job(job_id: str):
+    ok, payload = _verifier_cle_api()
+    if not ok:
+        return jsonify(payload), 401
+
+    with JOBS_LOCK:
+        job = JOBS.get(job_id)
+
+    if not job:
+        return jsonify({"error": "Job introuvable."}), 404
+
+    chemin = Path(job.get("api_output_path", "")) if job.get("api_output_path") else None
+    nom = job.get("api_output_name", "")
+    mimetype = job.get("api_output_mimetype", "application/octet-stream")
+
+    if not chemin or not chemin.exists():
+        return jsonify({"error": "Aucune sortie disponible pour ce job."}), 404
+
+    return send_file(chemin, as_attachment=True, download_name=nom or chemin.name, mimetype=mimetype)
+
+
+@app.route("/api/convert", methods=["POST"])
+def api_convert():
+    ok, payload = _verifier_cle_api()
+    if not ok:
+        return jsonify(payload), 401
+
+    format_cible = request.form.get("target_format", "").lower().strip()
+    type_conversion = request.form.get("conversion_type", "data").lower().strip()
+    txt_encoding = request.form.get("txt_encoding", "utf-8").lower().strip()
+    fichiers = [f for f in request.files.getlist("file") if f and f.filename]
+
+    if not fichiers:
+        return jsonify({"error": "Aucun fichier sélectionné."}), 400
+
+    try:
+        _valider_requete_conversion(type_conversion, format_cible)
+    except ConversionError as e:
+        return jsonify({"error": str(e)}), 400
+
+    taille_totale = _taille_totale_uploads(fichiers)
+    if taille_totale > TAILLE_MAX_GLOBALE:
+        return jsonify({"error": "Taille totale des fichiers au-delà de la limite autorisée."}), 413
+
+    job_id = _creer_job(type_conversion, format_cible, len(fichiers))
+    _maj_job(job_id, status="en_cours")
+
+    sorties: list[tuple[str, Path, str]] = []
+    erreurs: list[str] = []
+    formats_sources: set[str] = set()
+
+    try:
+        for fichier in fichiers:
+            nom_original = secure_filename(fichier.filename or "")
+            ext_source = Path(nom_original).suffix.lower().lstrip(".")
+            if ext_source:
+                formats_sources.add(_normaliser_image(ext_source))
+
+            octets_entree = fichier.read()
+            if not octets_entree:
+                erreurs.append(f"{nom_original}: fichier vide")
+                continue
+
+            try:
+                octets_sortie, ext_sortie, mimetype_sortie = _convertir_un_fichier(
+                    type_conversion=type_conversion,
+                    format_cible=format_cible,
+                    nom_original=nom_original,
+                    octets_entree=octets_entree,
+                    txt_encoding=txt_encoding,
+                    mimetype_entree=fichier.mimetype or "",
+                )
+
+                nom_sortie = f"{Path(nom_original).stem or 'converted'}_{uuid.uuid4().hex[:8]}.{ext_sortie}"
+                chemin_sortie = REP_API_EXPORTS / f"{job_id}_{nom_sortie}"
+                chemin_sortie.write_bytes(octets_sortie)
+                sorties.append((nom_sortie, chemin_sortie, mimetype_sortie))
+            except ConversionError as e:
+                erreurs.append(f"{nom_original}: {str(e)}")
+            except Exception:
+                erreurs.append(f"{nom_original}: erreur inattendue pendant la conversion")
+
+        if not sorties:
+            _maj_job(job_id, status="erreur", success_count=0, error_count=len(erreurs), message="Toutes les conversions ont échoué")
+            _enregistrer_historique_job(
+                job_id=job_id,
+                type_conversion=type_conversion,
+                format_cible=format_cible,
+                formats_sources=formats_sources,
+                taille_totale=taille_totale,
+                nb_fichiers=len(fichiers),
+                success_count=0,
+                error_count=len(erreurs),
+                status="erreur",
+            )
+            return jsonify({
+                "job_id": job_id,
+                "status": "erreur",
+                "errors": erreurs,
+                "status_url": url_for("api_job_status", job_id=job_id, _external=False),
+            }), 400
+
+        sortie_job_path: Path
+        sortie_job_name: str
+        sortie_job_mimetype: str
+
+        if len(sorties) == 1 and not erreurs:
+            sortie_job_name, sortie_job_path, sortie_job_mimetype = sorties[0]
+            _maj_job(
+                job_id,
+                status="termine",
+                success_count=1,
+                error_count=0,
+                message="Conversion terminée",
+                api_output_path=str(sortie_job_path),
+                api_output_name=sortie_job_name,
+                api_output_mimetype=sortie_job_mimetype,
+            )
+            statut = "termine"
+        else:
+            nom_zip = f"api_batch_{job_id[:8]}.zip"
+            chemin_zip = REP_API_EXPORTS / nom_zip
+            with zipfile.ZipFile(chemin_zip, mode="w", compression=zipfile.ZIP_DEFLATED) as zipf:
+                for nom_sortie, chemin_sortie, _ in sorties:
+                    zipf.write(chemin_sortie, arcname=nom_sortie)
+                if erreurs:
+                    zipf.writestr("errors.txt", "\n".join(erreurs) + "\n")
+
+            for _, chemin_sortie, _ in sorties:
+                _supprimer_fichier(str(chemin_sortie))
+
+            statut = "erreur" if erreurs else "termine"
+            _maj_job(
+                job_id,
+                status=statut,
+                success_count=len(sorties),
+                error_count=len(erreurs),
+                message="Lot terminé avec erreurs" if erreurs else "Lot terminé",
+                api_output_path=str(chemin_zip),
+                api_output_name=nom_zip,
+                api_output_mimetype="application/zip",
+            )
+
+        _enregistrer_historique_job(
+            job_id=job_id,
+            type_conversion=type_conversion,
+            format_cible=format_cible,
+            formats_sources=formats_sources,
+            taille_totale=taille_totale,
+            nb_fichiers=len(fichiers),
+            success_count=len(sorties),
+            error_count=len(erreurs),
+            status=statut,
+        )
+
+        return jsonify(
+            {
+                "job_id": job_id,
+                "status": statut,
+                "success_count": len(sorties),
+                "error_count": len(erreurs),
+                "errors": erreurs,
+                "status_url": url_for("api_job_status", job_id=job_id, _external=False),
+                "download_url": url_for("api_download_job", job_id=job_id, _external=False),
+            }
+        ), 201
+    except Exception:
+        _maj_job(job_id, status="erreur", success_count=len(sorties), error_count=max(1, len(erreurs)), message="Erreur inattendue")
+        _enregistrer_historique_job(
+            job_id=job_id,
+            type_conversion=type_conversion,
+            format_cible=format_cible,
+            formats_sources=formats_sources,
+            taille_totale=taille_totale,
+            nb_fichiers=len(fichiers),
+            success_count=len(sorties),
+            error_count=max(1, len(erreurs)),
+            status="erreur",
+        )
+        return jsonify({"error": "Une erreur inattendue est survenue."}), 500
+
+
 @app.route("/convert", methods=["POST"])
 def convert():
     format_cible = request.form.get("target_format", "").lower()
@@ -265,8 +610,15 @@ def convert():
         flash("Aucun fichier sélectionné.", "error")
         return redirect(url_for("index"))
 
-    if type_conversion not in {"data", "image", "audio", "document"}:
-        flash("Type de conversion invalide.", "error")
+    try:
+        _valider_requete_conversion(type_conversion, format_cible)
+    except ConversionError as e:
+        flash(str(e), "error")
+        return redirect(url_for("index"))
+
+    taille_totale = _taille_totale_uploads(fichiers)
+    if taille_totale > TAILLE_MAX_GLOBALE:
+        flash("Taille totale des fichiers au-delà de la limite autorisée.", "error")
         return redirect(url_for("index"))
 
     job_id = _creer_job(type_conversion, format_cible, len(fichiers))
@@ -287,7 +639,7 @@ def convert():
 
     try:
         for fichier in fichiers:
-            nom_original = secure_filename(fichier.filename)
+            nom_original = secure_filename(fichier.filename or "")
             prefixe_unique = uuid.uuid4().hex
             nom_sauvegarde = f"{prefixe_unique}_{nom_original or 'upload'}"
             chemin_sauvegarde = REP_UPLOADS / nom_sauvegarde
