@@ -13,5 +13,11 @@ env/
 uploads/*
 !uploads/.gitignore
 
+# Data and documentation are tracked in the repository
+!data/
+!data/*.json
+!documentation/
+!documentation/*.md
+
 # VS Code
 .vscode/

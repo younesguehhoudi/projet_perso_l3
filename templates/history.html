@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block title %}Convertisseur - Historique{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-header bg-white border-bottom">
+        <div class="d-flex justify-content-between align-items-center">
+          <h2 class="h5 mb-0">Historique des conversions</h2>
+          <div class="gap-2 d-flex">
+            <input type="number" id="limit" class="form-control form-control-sm" value="50" min="1" max="100" style="width: 80px;" />
+            <button class="btn btn-sm btn-outline-secondary" id="refresh_history" type="button">Actualiser</button>
+          </div>
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="bg-light">
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Formats</th>
+                <th>Fichiers</th>
+                <th>Taille</th>
+                <th>Statut</th>
+                <th>Succès/Erreurs</th>
+              </tr>
+            </thead>
+            <tbody id="history_body">
+              <tr><td colspan="7" class="text-muted text-center py-4">Aucun historique. Les conversions apparaîtront ici.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const refreshBtn = document.getElementById('refresh_history');
+  const limitInput = document.getElementById('limit');
+  
+  function formatDate(isoString) {
+    const date = new Date(isoString);
+    return date.toLocaleString('fr-FR', { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i];
+  }
+
+  function getStatusBadge(status) {
+    const badges = {
+      'termine': '<span class="badge bg-success">Terminé</span>',
+      'erreur': '<span class="badge bg-danger">Erreur</span>',
+    };
+    return badges[status] || `<span class="badge bg-secondary">${status}</span>`;
+  }
+
+  function updateHistory() {
+    refreshBtn.disabled = true;
+    const limit = Math.min(100, Math.max(1, parseInt(limitInput.value) || 20));
+
+    fetch(`/api/history?limit=${limit}`)
+      .then(r => r.json())
+      .then(entries => {
+        const tbody = document.getElementById('history_body');
+        
+        if (!Array.isArray(entries) || entries.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" class="text-muted text-center py-4">Aucun historique pour le moment.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = entries.map(entry => {
+          const sourceFormats = Array.isArray(entry.source_formats) 
+            ? entry.source_formats.join(', ').toUpperCase()
+            : 'N/A';
+          const targetFormat = (entry.target_format || '').toUpperCase();
+          const formats = `${sourceFormats} → ${targetFormat}`;
+          
+          return `
+            <tr>
+              <td><small class="text-muted">${formatDate(entry.date)}</small></td>
+              <td>${(entry.type || '').charAt(0).toUpperCase() + (entry.type || '').slice(1)}</td>
+              <td>${formats}</td>
+              <td>${entry.files_count || 0}</td>
+              <td>${formatBytes(entry.size_bytes || 0)}</td>
+              <td>${getStatusBadge(entry.status)}</td>
+              <td>
+                <span class="text-success">${entry.success_count || 0}</span> /
+                <span class="text-danger">${entry.error_count || 0}</span>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      })
+      .catch(err => {
+        console.error('Erreur lors du chargement de l\'historique:', err);
+        document.getElementById('history_body').innerHTML = '<tr><td colspan="7" class="text-danger text-center">Erreur lors du chargement.</td></tr>';
+      })
+      .finally(() => {
+        refreshBtn.disabled = false;
+      });
+  }
+
+  refreshBtn.addEventListener('click', updateHistory);
+  limitInput.addEventListener('change', updateHistory);
+
+  // Charger l'historique au démarrage
+  updateHistory();
+
+  // Actualiser automatiquement toutes les 10 secondes
+  setInterval(updateHistory, 10000);
+});
+</script>
+
+<style>
+table td {
+  vertical-align: middle;
+  font-size: 0.9rem;
+}
+
+.badge {
+  font-size: 0.8rem;
+}
+</style>
+{% endblock %}

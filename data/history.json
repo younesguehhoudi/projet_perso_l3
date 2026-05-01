@@ -1,0 +1,184 @@
+[
+  {
+    "id": "3c44f9632e9047ad8d3dc662c4c0b449",
+    "job_id": "bcd8a3e02a1547fd912af464c0a135ab",
+    "date": "2026-04-01T12:54:03.851418+00:00",
+    "type": "image",
+    "source_formats": [
+      "jpg",
+      "webp"
+    ],
+    "target_format": "png",
+    "size_bytes": 235569,
+    "files_count": 2,
+    "success_count": 2,
+    "error_count": 0,
+    "status": "termine"
+  },
+  {
+    "id": "22bef4295ef14d1a87ee399db78479c1",
+    "job_id": "aca54c05be9940079d7325c3bfc90472",
+    "date": "2026-04-01T12:58:27.567916+00:00",
+    "type": "image",
+    "source_formats": [
+      "webp"
+    ],
+    "target_format": "png",
+    "size_bytes": 154952,
+    "files_count": 1,
+    "success_count": 1,
+    "error_count": 0,
+    "status": "termine"
+  },
+  {
+    "id": "6258f41a7dd8415c8e01b22fff2b283d",
+    "job_id": "32200aed1c4a4a2690423f60ca933f78",
+    "date": "2026-04-01T13:03:22.828127+00:00",
+    "type": "image",
+    "source_formats": [
+      "jpg",
+      "webp"
+    ],
+    "target_format": "png",
+    "size_bytes": 38250,
+    "files_count": 2,
+    "success_count": 2,
+    "error_count": 0,
+    "status": "termine"
+  },
+  {
+    "id": "entry-1",
+    "job_id": "job-1",
+    "date": "2026-05-01T10:00:00",
+    "type": "data",
+    "source_formats": [
+      "json"
+    ],
+    "target_format": "yaml",
+    "size_bytes": 1024,
+    "files_count": 1,
+    "success_count": 1,
+    "error_count": 0,
+    "status": "termine"
+  },
+  {
+    "id": "cb1dd8f2114f436c82e23c8b1e62f4ef",
+    "job_id": "64ed1c5789e4483f80757f5bbefb81d8",
+    "date": "2026-05-01T09:55:40.630874+00:00",
+    "type": "document",
+    "source_formats": [
+      "docx"
+    ],
+    "target_format": "pdf",
+    "size_bytes": 39176,
+    "files_count": 1,
+    "success_count": 1,
+    "error_count": 0,
+    "status": "termine"
+  },
+  {
+    "id": "017c4522ea6142c692fc803ef84667a5",
+    "job_id": "e8e8243656af41d4841e370c3472aea2",
+    "date": "2026-05-01T15:12:47.056674+00:00",
+    "type": "data",
+    "source_formats": [
+      "json"
+    ],
+    "target_format": "yaml",
+    "size_bytes": 11,
+    "files_count": 1,
+    "success_count": 1,
+    "error_count": 0,
+    "status": "termine"
+  },
+  {
+    "id": "7dbf91584d6c486e9477fd8b9cc11141",
+    "job_id": "b9946767160140bba114cd07dc6e056d",
+    "date": "2026-05-01T15:12:57.397062+00:00",
+    "type": "data",
+    "source_formats": [
+      "json"
+    ],
+    "target_format": "yaml",
+    "size_bytes": 11,
+    "files_count": 1,
+    "success_count": 1,
+    "error_count": 0,
+    "status": "termine"
+  },
+  {
+    "id": "9de5283b79e345b4abd03c4221e7d1f5",
+    "job_id": "d8cc363d92f642e1a5b5bf695fe921bc",
+    "date": "2026-05-01T15:12:57.402798+00:00",
+    "type": "data",
+    "source_formats": [
+      "json"
+    ],
+    "target_format": "yaml",
+    "size_bytes": 11,
+    "files_count": 1,
+    "success_count": 1,
+    "error_count": 0,
+    "status": "termine"
+  },
+  {
+    "id": "4d2b082c8aa1430192a6943556827e5f",
+    "job_id": "2c85856dec2f4c9dabaef7736899accf",
+    "date": "2026-05-01T16:03:34.335422+00:00",
+    "type": "document",
+    "source_formats": [
+      "pdf"
+    ],
+    "target_format": "docx",
+    "size_bytes": 402292,
+    "files_count": 1,
+    "success_count": 0,
+    "error_count": 1,
+    "status": "erreur"
+  },
+  {
+    "id": "25a254577a1246e89c0f9314967de223",
+    "job_id": "77f3cfa634af4ec4b1f3ddad05f09b3b",
+    "date": "2026-05-01T16:11:46.661096+00:00",
+    "type": "image",
+    "source_formats": [
+      "jpeg"
+    ],
+    "target_format": "png",
+    "size_bytes": 671363,
+    "files_count": 1,
+    "success_count": 1,
+    "error_count": 0,
+    "status": "termine"
+  },
+  {
+    "id": "b8dbeea108d144b4965a24f257d9446c",
+    "job_id": "05386fc012f54b60a2c844e05ff06a7b",
+    "date": "2026-05-01T16:12:57.071858+00:00",
+    "type": "image",
+    "source_formats": [
+      "jpeg"
+    ],
+    "target_format": "pdf",
+    "size_bytes": 53770,
+    "files_count": 1,
+    "success_count": 1,
+    "error_count": 0,
+    "status": "termine"
+  },
+  {
+    "id": "8c74f53d583640a6b1d0aac7c9a3fa72",
+    "job_id": "aa505f6d7d1f4464ba9f3456638d9ed1",
+    "date": "2026-05-01T16:13:29.186140+00:00",
+    "type": "document",
+    "source_formats": [
+      "pdf"
+    ],
+    "target_format": "docx",
+    "size_bytes": 402292,
+    "files_count": 1,
+    "success_count": 0,
+    "error_count": 1,
+    "status": "erreur"
+  }
+]

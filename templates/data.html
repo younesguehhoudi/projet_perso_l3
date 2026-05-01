@@ -3,15 +3,38 @@
 {% block title %}Convertisseur - Données{% endblock %}
 
 {% block content %}
+<!-- Quick presets -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card shadow-sm bg-light">
+      <div class="card-body">
+        <small class="text-muted d-block mb-2">Presets rapides</small>
+        <div class="btn-group d-flex gap-2 flex-wrap" role="group">
+          <button type="button" class="btn btn-sm btn-outline-primary preset-btn" data-target="json">JSON → YAML</button>
+          <button type="button" class="btn btn-sm btn-outline-primary preset-btn" data-target="yaml">YAML → JSON</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="card shadow-sm">
   <div class="card-body">
     <p class="text-muted mb-3">Conversion de données JSON ⇄ YAML.</p>
-    <form action="{{ url_for('convert') }}" method="post" enctype="multipart/form-data">
+    <form action="{{ url_for('convert.convert') }}" method="post" enctype="multipart/form-data">
       <input type="hidden" name="conversion_type" value="data" />
       <div class="mb-3">
         <label for="file" class="form-label">Fichier(s)</label>
-        <input class="form-control" type="file" id="file" name="file" multiple required accept=".json,.yaml,.yml,.txt,.conf" />
+        <input class="form-control" type="file" id="file" name="file" multiple required accept=".json,.yaml,.yml,.txt,.conf" data-preview-target="file_preview" />
         <div class="form-text">En lot, un ZIP est généré automatiquement.</div>
+      </div>
+      <div id="file_preview" class="file-preview mt-3" style="display: none;">
+        <div class="card bg-light border-0">
+          <div class="card-body">
+            <small class="text-muted d-block mb-2">Previsualisation</small>
+            <div class="file-preview-body"></div>
+          </div>
+        </div>
       </div>
       <div class="mb-3">
         <label for="target_format" class="form-label">Format de sortie</label>
@@ -24,6 +47,28 @@
     </form>
   </div>
 </div>
+
+<script>
+// Pré-remplir depuis le preset rapide (depuis sessionStorage)
+const selectedFormat = sessionStorage.getItem('selectedFormat');
+if (selectedFormat) {
+  const select = document.getElementById('target_format');
+  if (select && Array.from(select.options).some(o => o.value === selectedFormat)) {
+    select.value = selectedFormat;
+    select.dispatchEvent(new Event('change'));
+    sessionStorage.removeItem('selectedFormat');
+  }
+}
+
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', function(e) {
+    e.preventDefault();
+    const target = this.dataset.target;
+    document.getElementById('target_format').value = target;
+    document.getElementById('target_format').dispatchEvent(new Event('change'));
+  });
+});
+</script>
 
 {% include '_jobs_table.html' %}
 {% endblock %}

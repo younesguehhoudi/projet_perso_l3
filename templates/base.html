@@ -13,10 +13,12 @@
 
       <nav class="navbar navbar-expand-lg bg-white rounded-4 shadow-sm mb-4 px-3 py-2 main-nav">
         <div class="navbar-nav gap-1">
-          <a class="nav-link {% if active_page == 'data' %}active{% endif %}" href="{{ url_for('page_data') }}">Données</a>
-          <a class="nav-link {% if active_page == 'images' %}active{% endif %}" href="{{ url_for('page_images') }}">Images</a>
-          <a class="nav-link {% if active_page == 'audio' %}active{% endif %}" href="{{ url_for('page_audio') }}">Audio</a>
-          <a class="nav-link {% if active_page == 'documents' %}active{% endif %}" href="{{ url_for('page_documents') }}">Documents</a>
+          <a class="nav-link {% if active_page == 'data' %}active{% endif %}" href="{{ url_for('pages.page_data') }}">Données</a>
+          <a class="nav-link {% if active_page == 'images' %}active{% endif %}" href="{{ url_for('pages.page_images') }}">Images</a>
+          <a class="nav-link {% if active_page == 'audio' %}active{% endif %}" href="{{ url_for('pages.page_audio') }}">Audio</a>
+          <a class="nav-link {% if active_page == 'documents' %}active{% endif %}" href="{{ url_for('pages.page_documents') }}">Documents</a>
+          <a class="nav-link {% if active_page == 'monitoring' %}active{% endif %}" href="{{ url_for('pages.page_monitoring') }}">Suivi</a>
+          <a class="nav-link {% if active_page == 'history' %}active{% endif %}" href="{{ url_for('pages.page_history') }}">Historique</a>
         </div>
       </nav>
 

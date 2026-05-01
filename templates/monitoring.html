@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+
+{% block title %}Convertisseur - Suivi{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-md-8">
+    <div class="card shadow-sm">
+      <div class="card-header bg-white border-bottom">
+        <div class="d-flex justify-content-between align-items-center">
+          <h2 class="h5 mb-0">Suivi des conversions</h2>
+          <button class="btn btn-sm btn-outline-secondary" id="refresh_jobs" type="button">
+            <span class="spinner-border spinner-border-sm me-2" id="refresh_spinner" role="status" aria-hidden="true" style="display: none;"></span>
+            Actualiser
+          </button>
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="bg-light">
+              <tr>
+                <th>ID Job</th>
+                <th>Type</th>
+                <th>Format</th>
+                <th>Statut</th>
+                <th>Succès/Erreurs</th>
+                <th>Créé</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="jobs_body">
+              <tr><td colspan="7" class="text-muted text-center py-4">Aucun job pour le moment. Les conversions apparaîtront ici.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card shadow-sm mb-3">
+      <div class="card-header bg-white border-bottom">
+        <h3 class="h6 mb-0">Statistiques</h3>
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <small class="text-muted d-block">Jobs terminés</small>
+          <h4 id="stat_completed" class="text-success">0</h4>
+        </div>
+        <div class="mb-3">
+          <small class="text-muted d-block">Jobs en erreur</small>
+          <h4 id="stat_errors" class="text-danger">0</h4>
+        </div>
+        <div>
+          <small class="text-muted d-block">Jobs en attente</small>
+          <h4 id="stat_pending" class="text-warning">0</h4>
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm">
+      <div class="card-header bg-white border-bottom">
+        <h3 class="h6 mb-0">Presets rapides</h3>
+      </div>
+      <div class="card-body">
+        <div class="d-grid gap-2">
+          <button class="btn btn-outline-primary btn-sm" data-preset="json2yaml">JSON → YAML</button>
+          <button class="btn btn-outline-primary btn-sm" data-preset="png2jpg">PNG → JPG</button>
+          <button class="btn btn-outline-primary btn-sm" data-preset="mp42mp3">MP4 → MP3</button>
+          <button class="btn btn-outline-primary btn-sm" data-preset="pdf2docx">PDF → DOCX</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal pour prévisualisation -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="previewTitle">Prévisualisation</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="previewContent">
+        <p class="text-muted">Chargement...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const refreshBtn = document.getElementById('refresh_jobs');
+  const spinner = document.getElementById('refresh_spinner');
+  
+  function formatDate(isoString) {
+    const date = new Date(isoString);
+    return date.toLocaleString('fr-FR', { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  function getStatusBadge(status) {
+    const badges = {
+      'termine': '<span class="badge bg-success">Terminé</span>',
+      'erreur': '<span class="badge bg-danger">Erreur</span>',
+      'en_cours': '<span class="badge bg-info">En cours</span>',
+      'en_attente': '<span class="badge bg-warning">En attente</span>'
+    };
+    return badges[status] || `<span class="badge bg-secondary">${status}</span>`;
+  }
+
+  function updateJobs() {
+    spinner.style.display = 'inline-block';
+    refreshBtn.disabled = true;
+
+    fetch('/api/jobs')
+      .then(r => r.json())
+      .then(jobs => {
+        const tbody = document.getElementById('jobs_body');
+        
+        if (jobs.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" class="text-muted text-center py-4">Aucun job pour le moment.</td></tr>';
+          document.getElementById('stat_completed').textContent = '0';
+          document.getElementById('stat_errors').textContent = '0';
+          document.getElementById('stat_pending').textContent = '0';
+          return;
+        }
+
+        let completed = 0, errors = 0, pending = 0;
+
+        tbody.innerHTML = jobs.map(job => {
+          if (job.status === 'termine') completed++;
+          else if (job.status === 'erreur') errors++;
+          else pending++;
+
+          const shortId = job.id.substring(0, 8);
+          return `
+            <tr>
+              <td><code class="text-muted">${shortId}</code></td>
+              <td>${job.type.charAt(0).toUpperCase() + job.type.slice(1)}</td>
+              <td>${job.target_format.toUpperCase()}</td>
+              <td>${getStatusBadge(job.status)}</td>
+              <td>
+                <span class="text-success">${job.success_count}</span> /
+                <span class="text-danger">${job.error_count}</span>
+              </td>
+              <td><small class="text-muted">${formatDate(job.created_at)}</small></td>
+              <td>
+                <button class="btn btn-xs btn-outline-secondary" title="Détails">📋</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        document.getElementById('stat_completed').textContent = completed;
+        document.getElementById('stat_errors').textContent = errors;
+        document.getElementById('stat_pending').textContent = pending;
+      })
+      .catch(err => {
+        console.error('Erreur lors du chargement des jobs:', err);
+        document.getElementById('jobs_body').innerHTML = '<tr><td colspan="7" class="text-danger">Erreur lors du chargement.</td></tr>';
+      })
+      .finally(() => {
+        spinner.style.display = 'none';
+        refreshBtn.disabled = false;
+      });
+  }
+
+  refreshBtn.addEventListener('click', updateJobs);
+
+  // Charger les jobs au démarrage
+  updateJobs();
+
+  // Actualiser automatiquement toutes les 5 secondes
+  setInterval(updateJobs, 5000);
+
+  // Presets rapides - Mapper preset -> {page, format}
+  const presetMap = {
+    json2yaml: { page: '{{ url_for("pages.page_data") }}', format: 'yaml' },
+    png2jpg: { page: '{{ url_for("pages.page_images") }}', format: 'jpg' },
+    mp42mp3: { page: '{{ url_for("pages.page_audio") }}', format: 'mp3' },
+    pdf2docx: { page: '{{ url_for("pages.page_documents") }}', format: 'docx' }
+  };
+  
+  document.querySelectorAll('[data-preset]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const preset = this.dataset.preset;
+      const mapping = presetMap[preset];
+      if (mapping) {
+        // Stocker le format dans sessionStorage
+        sessionStorage.setItem('selectedFormat', mapping.format);
+        // Rediriger vers la page appropriée
+        window.location.href = mapping.page;
+      }
+    });
+  });
+});
+</script>
+
+<style>
+.btn-xs {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+table td {
+  vertical-align: middle;
+}
+
+.badge {
+  font-size: 0.8rem;
+}
+</style>
+{% endblock %}

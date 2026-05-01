@@ -29,3 +29,155 @@ body {
 .jobs-table th {
   vertical-align: middle;
 }
+
+/* Enhanced error and message styles */
+.alert {
+  border-left: 4px solid;
+  border-radius: 0.5rem;
+}
+
+.alert-danger {
+  border-left-color: #dc3545;
+  background-color: #fff5f5;
+  color: #721c24;
+}
+
+.alert-warning {
+  border-left-color: #ffc107;
+  background-color: #fffbf0;
+  color: #856404;
+}
+
+.alert-success {
+  border-left-color: #28a745;
+  background-color: #f0fdf4;
+  color: #155724;
+}
+
+.alert-info {
+  border-left-color: #0d6efd;
+  background-color: #f0f8ff;
+  color: #004085;
+}
+
+.alert-close {
+  cursor: pointer;
+  float: right;
+  opacity: 0.7;
+}
+
+.alert-close:hover {
+  opacity: 1;
+}
+
+/* Error details/summary styles */
+.error-summary {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.error-summary h5 {
+  color: #856404;
+  margin-bottom: 0.5rem;
+}
+
+.error-details {
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.error-details ul {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+/* Form validation styles */
+.form-control.is-invalid,
+.form-select.is-invalid {
+  border-color: #dc3545;
+}
+
+.invalid-feedback {
+  color: #dc3545;
+  font-size: 0.875rem;
+  display: block;
+  margin-top: 0.25rem;
+}
+
+/* Success summary */
+.success-summary {
+  background: #d4edda;
+  border: 1px solid #28a745;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  color: #155724;
+}
+
+.success-summary .summary-count {
+  font-weight: bold;
+  color: #28a745;
+}
+
+/* Status badges */
+.badge {
+  padding: 0.35em 0.65em;
+  font-weight: 500;
+}
+
+.badge.status-terminate {
+  background-color: #28a745;
+}
+
+.badge.status-error {
+  background-color: #dc3545;
+}
+
+.badge.status-pending {
+  background-color: #ffc107;
+  color: #000;
+}
+
+.badge.status-running {
+  background-color: #0d6efd;
+}
+
+.file-preview .file-preview-body {
+  background: #fff;
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid #e9ecef;
+}
+
+.file-preview .file-meta {
+  color: #6c757d;
+  font-size: 0.875rem;
+}
+
+.file-preview .file-preview-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  display: block;
+}
+
+.file-preview .file-preview-text {
+  white-space: pre-wrap;
+  margin: 0;
+  max-height: 260px;
+  overflow: auto;
+}
+
+.file-preview .file-preview-list {
+  margin: 0 0 0.5rem 1rem;
+  padding: 0;
+  color: #6c757d;
+  font-size: 0.875rem;
+}

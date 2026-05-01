@@ -1,0 +1,94 @@
+{
+  "data": [
+    {
+      "id": "yaml2json",
+      "name": "YAML → JSON",
+      "source": "yaml",
+      "target": "json"
+    }
+  ],
+  "image": [
+    {
+      "id": "png2jpg",
+      "name": "PNG → JPG",
+      "source": "png",
+      "target": "jpg"
+    },
+    {
+      "id": "jpg2webp",
+      "name": "JPG → WebP",
+      "source": "jpg",
+      "target": "webp"
+    },
+    {
+      "id": "webp2jpg",
+      "name": "WebP → JPG",
+      "source": "webp",
+      "target": "jpg"
+    },
+    {
+      "id": "png2webp",
+      "name": "PNG → WebP",
+      "source": "png",
+      "target": "webp"
+    },
+    {
+      "id": "svg2png",
+      "name": "SVG → PNG",
+      "source": "svg",
+      "target": "png"
+    }
+  ],
+  "audio": [
+    {
+      "id": "mp42mp3",
+      "name": "MP4 → MP3",
+      "source": "mp4",
+      "target": "mp3"
+    },
+    {
+      "id": "mp32wav",
+      "name": "MP3 → WAV",
+      "source": "mp3",
+      "target": "wav"
+    }
+  ],
+  "document": [
+    {
+      "id": "pdf2docx",
+      "name": "PDF → DOCX",
+      "source": "pdf",
+      "target": "docx"
+    },
+    {
+      "id": "docx2pdf",
+      "name": "DOCX → PDF",
+      "source": "docx",
+      "target": "pdf"
+    },
+    {
+      "id": "pdf2txt",
+      "name": "PDF → TXT",
+      "source": "pdf",
+      "target": "txt"
+    },
+    {
+      "id": "txt2pdf",
+      "name": "TXT → PDF",
+      "source": "txt",
+      "target": "pdf"
+    },
+    {
+      "id": "docx2txt",
+      "name": "DOCX → TXT",
+      "source": "docx",
+      "target": "txt"
+    },
+    {
+      "id": "txt2docx",
+      "name": "TXT → DOCX",
+      "source": "txt",
+      "target": "docx"
+    }
+  ]
+}
